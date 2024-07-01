@@ -1,12 +1,7 @@
 use std::fs::read_to_string;
 
-// TODO: convert to command line arguments
-// ? May be better to move to struct
-const SEPARATOR: char = ',';
 const QUOTE: char = '"';
 const ESCAPE: char = '\\';
-const HEADER: bool = false;
-const FILENAME: &str = "test.csv";
 
 // ? May be a better idea to add interfaces instead of having everything public
 pub struct CsvContent {
@@ -30,9 +25,18 @@ fn read_lines(filename: &str) -> Result<Vec<String>, ()> {
     }
 }
 
-pub fn parse(filename: &str) -> Result<CsvContent, ()> {
-    let lines = read_lines(filename).unwrap(); // TODO: Catch and return instead of panicking
+pub fn parse(filename: &str, enable_header: bool, separator: char) -> Result<CsvContent, ()> {
+    let lines: Vec<String>;
+    match read_lines(filename) {
+        Err(_) => return Err(()),
+        Ok(x) => {
+            lines = x;
+        }
+    }
+
     let mut content: Vec<Vec<String>> = Vec::new();
+    let mut header: bool = enable_header;
+    let mut header_row: Option<Vec<String>> = None;
 
     for line in lines {
         let mut nested: bool = false;
@@ -41,35 +45,54 @@ pub fn parse(filename: &str) -> Result<CsvContent, ()> {
         let mut line_result: Vec<String> = Vec::new();
 
         for c in line.chars() {
-
-            // TODO: Replace with match
-            if c == QUOTE {
-                if prev_char == ESCAPE || prev_char == QUOTE {
-                    field_buffer.push(c);
-                } else {
-                    nested = !nested;
+            match c {
+                QUOTE => {
+                    if prev_char == ESCAPE || prev_char == QUOTE {
+                        field_buffer.push(c);
+                    } else {
+                        nested = !nested;
+                    }
                 }
-            } else if c == SEPARATOR {
-                if nested || prev_char == ESCAPE {
-                    field_buffer.push(c);
-                } else {
-                    line_result.push(field_buffer.clone());
-                    field_buffer = "".to_string();
+                ESCAPE => (),
+                _ => {
+                    if c == separator {
+                        if nested || prev_char == ESCAPE {
+                            field_buffer.push(c);
+                        } else {
+                            line_result.push(field_buffer.clone());
+                            field_buffer = "".to_string();
+                        }
+                    } else {
+                        if prev_char == ESCAPE && c == 'n' {
+                            field_buffer.push('\n');
+                        } else {
+                            field_buffer.push(c);
+                        }
+                    }
                 }
-            } else if c != ESCAPE {
-                field_buffer.push(c);
             }
             prev_char = c;
         }
 
         line_result.push(field_buffer.clone());
-        content.push(line_result);
+        if header {
+            header_row = Some(line_result.clone());
+            header = false;
+        } else {
+            content.push(line_result.clone());
+        }
     }
 
     return Ok(CsvContent {
-        header: None,
-        content: content
-    })
+        header: header_row,
+        content: content,
+    });
 }
 
-fn main() {}
+fn main() {
+    println!(
+        "{:?} {:?}",
+        parse("example.csv", true, ',').unwrap().content,
+        parse("example.csv", true, ',').unwrap().header
+    )
+}
