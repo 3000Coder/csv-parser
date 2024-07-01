@@ -1,6 +1,6 @@
 ### TODO:
-- Convert to lib
 - CLI interface
+- ~~Convert to lib~~
 - ~~Refactor~~
 - ~~Support escaping newlines (?)~~
 - ~~Header support~~

@@ -1,98 +1,38 @@
-use std::fs::read_to_string;
+#![allow(special_module_name)] // ? Not sure why is throwing warning
+mod lib;
 
-const QUOTE: char = '"';
-const ESCAPE: char = '\\';
-
-// ? May be a better idea to add interfaces instead of having everything public
-pub struct CsvContent {
-    pub header: Option<Vec<String>>,
-    pub content: Vec<Vec<String>>,
-}
-
-// ? May be better to handle this dirrectly in handle function
-fn read_lines(filename: &str) -> Result<Vec<String>, ()> {
-    match read_to_string(filename) {
-        Ok(f) => {
-            let mut result: Vec<String> = Vec::new();
-
-            for line in f.lines() {
-                result.push(line.to_string());
-            }
-
-            return Ok(result);
-        }
-        Err(_) => return Err(()),
-    }
-}
-
-pub fn parse(filename: &str, enable_header: bool, separator: char) -> Result<CsvContent, ()> {
-    let lines: Vec<String>;
-    match read_lines(filename) {
-        Err(_) => return Err(()),
-        Ok(x) => {
-            lines = x;
-        }
-    }
-
-    let mut content: Vec<Vec<String>> = Vec::new();
-    let mut header: bool = enable_header;
-    let mut header_row: Option<Vec<String>> = None;
-
-    for line in lines {
-        let mut nested: bool = false;
-        let mut prev_char: char = '\0';
-        let mut field_buffer: String = String::new();
-        let mut line_result: Vec<String> = Vec::new();
-
-        for c in line.chars() {
-            match c {
-                QUOTE => {
-                    if prev_char == ESCAPE || prev_char == QUOTE {
-                        field_buffer.push(c);
-                    } else {
-                        nested = !nested;
-                    }
-                }
-                ESCAPE => (),
-                _ => {
-                    if c == separator {
-                        if nested || prev_char == ESCAPE {
-                            field_buffer.push(c);
-                        } else {
-                            line_result.push(field_buffer.clone());
-                            field_buffer = "".to_string();
-                        }
-                    } else {
-                        if prev_char == ESCAPE && c == 'n' {
-                            field_buffer.push('\n');
-                        } else {
-                            field_buffer.push(c);
-                        }
-                    }
-                }
-            }
-            prev_char = c;
-        }
-
-        line_result.push(field_buffer.clone());
-        if header {
-            header_row = Some(line_result.clone());
-            header = false;
-        } else {
-            content.push(line_result.clone());
-        }
-    }
-
-    return Ok(CsvContent {
-        header: header_row,
-        content: content,
-    });
-}
+use std::env;
 
 fn main() {
-    println!(
-        "{:?} {:?}",
-        parse("example.csv", true, ',').unwrap().content,
-        parse("example.csv", true, ',').unwrap().header
-    )
+    let args: Vec<String> = env::args().collect();
+
+    if !(args.len() == 3 || args.len() == 4) {
+        println!("Not enough arguments suplied.");
+        return;
+    }
+
+    let file_path: String = args[1].clone();
+    let separator: char;
+    if args[2].len() == 1 {
+        separator = args[2].chars().nth(0).unwrap();
+    } else {
+        println!("Separator must be one character.");
+        return;
+    }
+    let mut enable_header = false;
+
+    if args.len() == 4 && args[3] == "--enable-header" {
+        enable_header = true;
+    }
+
+    let result = lib::parse(&file_path, enable_header, separator).unwrap();
+
+    if let Some(h) = result.header {
+        println!("Header: \n{:?}\n", h);
+    }
+
+    println!("Content:");
+    for row in result.content {
+        println!("{:?}", row);
+    }
 }
