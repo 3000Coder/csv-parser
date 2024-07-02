@@ -1,5 +1,5 @@
 # Simple CSV parser
-Simple CSV parser I made to practise my coding skills.
+Simple CSV parser I made to practice my coding skills.
 
 ## Features:
 - Support for all basic CSV features
