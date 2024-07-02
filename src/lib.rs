@@ -26,7 +26,7 @@ fn read_lines(filename: &str) -> Result<Vec<String>, ()> {
 }
 
 // TODO: Add borrows
-pub fn parse(filename: &str, enable_header: bool, separator: char) -> Result<CsvContent, ()> {
+pub fn parse(filename: &str, enable_header: &bool, separator: &char) -> Result<CsvContent, ()> {
     let lines: Vec<String>;
     match read_lines(filename) {
         Err(_) => return Err(()),
@@ -36,7 +36,7 @@ pub fn parse(filename: &str, enable_header: bool, separator: char) -> Result<Csv
     }
 
     let mut content: Vec<Vec<String>> = Vec::new();
-    let mut header: bool = enable_header;
+    let mut header: bool = enable_header.clone();
     let mut header_row: Option<Vec<String>> = None;
 
     for line in lines {
@@ -56,7 +56,7 @@ pub fn parse(filename: &str, enable_header: bool, separator: char) -> Result<Csv
                 }
                 ESCAPE => (),
                 _ => {
-                    if c == separator {
+                    if c == separator.clone() {
                         if nested || prev_char == ESCAPE {
                             field_buffer.push(c);
                         } else {

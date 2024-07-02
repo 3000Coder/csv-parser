@@ -3,6 +3,16 @@ mod lib;
 
 use std::env;
 
+fn print_vec_without_brackets(vec: &Vec<String>) {
+    println!(
+        "{}",
+        vec.iter()
+            .map(|v| format!("{}", v.replace("\n", "\\n")))
+            .collect::<Vec<String>>()
+            .join(", ")
+    );
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -25,14 +35,16 @@ fn main() {
         enable_header = true;
     }
 
-    let result = lib::parse(&file_path, enable_header, separator).unwrap();
+    let result = lib::parse(&file_path, &enable_header, &separator).unwrap();
 
     if let Some(h) = result.header {
-        println!("Header: \n{:?}\n", h);
+        println!("Header:");
+        print_vec_without_brackets(&h);
+        println!();
     }
 
     println!("Content:");
     for row in result.content {
-        println!("{:?}", row);
+        print_vec_without_brackets(&row);
     }
 }
